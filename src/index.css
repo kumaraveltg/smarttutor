@@ -1,0 +1,22 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+body {
+  @apply bg-slate-50 text-slate-800;
+}
+
+/* One shared "Math keyboard" toggle lives at the top of the practice page —
+   hide MathLive's own per-field icons so they don't duplicate that control
+   inside every step box. */
+math-field::part(virtual-keyboard-toggle),
+math-field::part(menu-toggle) {
+  display: none;
+}
+
+/* Long unwrapped content inside a math-field should scroll within the
+   field, never stretch the page sideways. */
+math-field {
+  max-width: 100%;
+  overflow-x: auto;
+}
