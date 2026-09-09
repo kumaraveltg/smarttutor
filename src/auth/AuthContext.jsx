@@ -23,13 +23,13 @@ export function AuthProvider({ children }) {
   }, [])
 
   async function login(username, password) {
-    const data = await client.post('/auth/login', { username, password })
-    localStorage.setItem('token', data.token)
-    setUser(data.user)
-    return data.user
-  }
-
-  function logout() {
+  const data = await client.postForm('/auth/login', { username, password })
+  localStorage.setItem('token', data.access_token)   // was data.token
+  setUser(data.user)
+  return data.user
+}
+  
+function logout() {
     localStorage.removeItem('token')
     setUser(null)
   }

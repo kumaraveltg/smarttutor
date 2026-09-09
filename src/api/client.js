@@ -1,6 +1,6 @@
 const BASE_URL = import.meta.env.VITE_API_BASE_URL
 
-async function request(method, path, { params, body } = {}) {
+async function request(method, path, { params, body, formBody } = {}) {
   let url = `${BASE_URL}${path}`
   if (params) {
     const qs = new URLSearchParams(params).toString()
@@ -8,14 +8,19 @@ async function request(method, path, { params, body } = {}) {
   }
 
   const token = localStorage.getItem('token')
-  const headers = { 'Content-Type': 'application/json' }
+  const headers = {}
   if (token) headers.Authorization = `Bearer ${token}`
 
-  const res = await fetch(url, {
-    method,
-    headers,
-    body: body !== undefined ? JSON.stringify(body) : undefined,
-  })
+  let requestBody
+  if (formBody !== undefined) {
+    headers['Content-Type'] = 'application/x-www-form-urlencoded'
+    requestBody = new URLSearchParams(formBody).toString()
+  } else if (body !== undefined) {
+    headers['Content-Type'] = 'application/json'
+    requestBody = JSON.stringify(body)
+  }
+
+  const res = await fetch(url, { method, headers, body: requestBody })
 
   // On a 401 (expired/invalid session), clear the token and send the user
   // back to login instead of letting every page handle this individually.
@@ -43,8 +48,8 @@ console.log('BASE_URL:', import.meta.env.VITE_API_BASE_URL)
 const client = {
   get: (path, opts) => request('GET', path, opts),
   post: (path, body) => request('POST', path, { body }),
+  postForm: (path, formBody) => request('POST', path, { formBody }),   // new
   put: (path, body) => request('PUT', path, { body }),
   delete: (path) => request('DELETE', path),
 }
-
 export default client
