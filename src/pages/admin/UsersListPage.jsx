@@ -7,12 +7,13 @@ const LABEL = 'Users'
 const COLUMNS = [
   { key: 'username', label: 'Username' },
   { key: 'full_name', label: 'Full name' },
-  { key: 'role', label: 'Role' },
+  { key: 'role_id', label: 'Role' }, // rendered via roleName() below, not raw
   { key: 'is_active', label: 'Active' },
 ]
 
 export default function UsersListPage() {
   const [rows, setRows] = useState([])
+  const [roleMap, setRoleMap] = useState({}) // { [role_id]: role_name }
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
 
@@ -20,7 +21,12 @@ export default function UsersListPage() {
     setLoading(true)
     setError(null)
     try {
-      setRows(await adminApi.list(RESOURCE))
+      const [users, roles] = await Promise.all([
+        adminApi.list(RESOURCE),
+        adminApi.list('user-roles'),
+      ])
+      setRows(users)
+      setRoleMap(Object.fromEntries(roles.map((r) => [r.id, r.role_name])))
     } catch (err) {
       setError('Could not load data. Check the API connection.')
     } finally {
@@ -36,6 +42,11 @@ export default function UsersListPage() {
     if (!confirm('Delete this record?')) return
     await adminApi.remove(RESOURCE, id)
     load()
+  }
+
+  function renderCell(row, col) {
+    if (col.key === 'role_id') return roleMap[row.role_id] || row.role_id
+    return String(row[col.key] ?? '')
   }
 
   return (
@@ -65,20 +76,20 @@ export default function UsersListPage() {
           </thead>
           <tbody>
             {rows.map((row) => (
-                <tr key={row.user_id} className="border-t border-slate-100">
-                  {COLUMNS.map((col) => (
-                    <td key={col.key} className="px-4 py-2">{String(row[col.key] ?? '')}</td>
-                  ))}
-                  <td className="px-4 py-2 space-x-2">
-                    <Link to={`/admin/users/${row.user_id}`} className="text-brand-600 hover:underline">
-                      Edit
-                    </Link>
-                    <button onClick={() => handleDelete(row.user_id)} className="text-red-600 hover:underline">
-                      Delete
-                    </button>
-                  </td>
-                </tr>
-              ))}
+              <tr key={row.user_id} className="border-t border-slate-100">
+                {COLUMNS.map((col) => (
+                  <td key={col.key} className="px-4 py-2">{renderCell(row, col)}</td>
+                ))}
+                <td className="px-4 py-2 space-x-2">
+                  <Link to={`/admin/users/${row.user_id}`} className="text-brand-600 hover:underline">
+                    Edit
+                  </Link>
+                  <button onClick={() => handleDelete(row.user_id)} className="text-red-600 hover:underline">
+                    Delete
+                  </button>
+                </td>
+              </tr>
+            ))}
             {rows.length === 0 && (
               <tr>
                 <td className="px-4 py-6 text-slate-400" colSpan={COLUMNS.length + 1}>

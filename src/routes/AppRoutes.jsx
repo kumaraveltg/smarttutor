@@ -19,6 +19,7 @@ import QuestionsListPage from '../pages/admin/QuestionsListPage'
 import QuestionsFormPage from '../pages/admin/QuestionsFormPage'
 import AnswersListPage from '../pages/admin/AnswersListPage'
 import AnswersFormPage from '../pages/admin/AnswersFormPage'
+import ProfilePage from '../pages/ProfilePage'
 
 export default function AppRoutes() {
   return (
@@ -31,6 +32,7 @@ export default function AppRoutes() {
         // Once auth is wired back in:
         // element={<RequireRole roles={['admin', 'teacher']}><AdminLayout /></RequireRole>}
       >
+        <Route path="profile" element={<ProfilePage />} />
         <Route index element={<Navigate to="users" replace />} />
 
         <Route path="users" element={<UsersListPage />} />

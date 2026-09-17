@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { adminApi } from '../../api/adminApi'
 
-const RESOURCE = 'roles'
+const RESOURCE = 'user-roles' // matches backend prefix /admin/user-roles
 const LABEL = 'User Roles'
 const COLUMNS = [
   { key: 'code', label: 'Code' },

@@ -10,6 +10,7 @@ export default function UsersFormPage() {
   const isNew = id === 'new'
   const navigate = useNavigate()
   const [values, setValues] = useState({})
+  const [roles, setRoles] = useState([])
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState(null)
 
@@ -17,6 +18,11 @@ export default function UsersFormPage() {
     if (!isNew) adminApi.get(RESOURCE, id).then(setValues)
     else setValues({})
   }, [id])
+
+  // Load roles from the user_roles table instead of hardcoding them
+  useEffect(() => {
+    adminApi.list('user-roles').then(setRoles).catch(() => setRoles([]))
+  }, [])
 
   function setField(key, val) {
     setValues((v) => ({ ...v, [key]: val }))
@@ -27,11 +33,23 @@ export default function UsersFormPage() {
     setSaving(true)
     setError(null)
     try {
-      if (isNew) await adminApi.create(RESOURCE, values)
-      else await adminApi.update(RESOURCE, id, values)
+      // Backend expects role_id (FK), not a role string.
+      // Only include role_id if one is actually selected — never send an
+      // explicit null, or it will overwrite the existing value in the DB
+      // (st_users.role_id is NOT NULL).
+      const payload = { ...values }
+      if (values.role_id) {
+        payload.role_id = Number(values.role_id)
+      } else {
+        delete payload.role_id
+      }
+      if (isNew) await adminApi.create(RESOURCE, payload)
+      else await adminApi.update(RESOURCE, id, payload)
       navigate('/admin/users')
     } catch (err) {
-      setError('Save failed. Check required fields and try again.')
+      // Surface the backend's actual validation message instead of a generic one
+      const detail = err?.response?.data?.detail
+      setError(typeof detail === 'string' ? detail : 'Save failed. Check required fields and try again.')
     } finally {
       setSaving(false)
     }
@@ -68,13 +86,16 @@ export default function UsersFormPage() {
         <label className="block text-sm text-slate-600 mb-1">Role</label>
         <select
           className="w-full border border-slate-300 rounded-md px-3 py-2 text-sm"
-          value={values.role || ''}
-          onChange={(e) => setField('role', e.target.value)}
+          value={values.role_id || ''}
+          onChange={(e) => setField('role_id', e.target.value)}
+          required
         >
           <option value="">Select…</option>
-          <option value="admin">admin</option>
-          <option value="teacher">teacher</option>
-          <option value="student">student</option>
+          {roles.map((r) => (
+            <option key={r.id} value={r.id}>
+              {r.role_name}
+            </option>
+          ))}
         </select>
       </div>
 
