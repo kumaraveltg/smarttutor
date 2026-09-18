@@ -23,8 +23,8 @@ const NAV_ITEMS = [
 
 export default function AdminLayout() {
   return (
-    <div className="flex min-h-screen bg-slate-50">
-      <aside className="w-56 shrink-0 bg-white border-r border-slate-200 p-4 flex flex-col">
+    <div className="flex h-screen bg-slate-50 overflow-hidden">
+      <aside className="w-56 shrink-0 bg-white border-r border-slate-200 p-4 flex flex-col overflow-y-auto">
         <h2 className="text-sm font-semibold text-slate-400 uppercase tracking-wide mb-3">
           Admin
         </h2>
@@ -46,7 +46,7 @@ export default function AdminLayout() {
         </nav>
       </aside>
 
-      <div className="flex-1 flex flex-col">
+      <div className="flex-1 flex flex-col min-h-0">
         <TopBar title="Admin Console" />
         <main className="flex-1 p-6 overflow-y-auto">
           <Outlet />

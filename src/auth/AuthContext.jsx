@@ -24,7 +24,8 @@ export function AuthProvider({ children }) {
 
   async function login(username, password) {
   const data = await client.postForm('/auth/login', { username, password })
-  localStorage.setItem('token', data.access_token)   // was data.token
+  console.log('LOGIN response user:', data.user)
+  localStorage.setItem('token', data.access_token)
   setUser(data.user)
   return data.user
 }
