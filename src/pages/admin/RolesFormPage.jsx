@@ -1,8 +1,9 @@
 import { useEffect, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { adminApi } from '../../api/adminApi'
+import { useAuth } from '../../auth/AuthContext'
 
-const RESOURCE = 'roles'
+const RESOURCE = 'user-roles'   // was 'roles' — wrong endpoint
 const LABEL = 'Role'
 
 export default function RolesFormPage() {
@@ -12,10 +13,14 @@ export default function RolesFormPage() {
   const [values, setValues] = useState({})
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState(null)
+  const { user: currentUser } = useAuth()
 
   useEffect(() => {
-    if (!isNew) adminApi.get(RESOURCE, id).then(setValues)
-    else setValues({})
+    if (!isNew) {
+      adminApi.get(RESOURCE, id).then(setValues)
+    } else {
+      setValues({})
+    }
   }, [id])
 
   function setField(key, val) {
@@ -27,8 +32,8 @@ export default function RolesFormPage() {
     setSaving(true)
     setError(null)
     try {
-      if (isNew) await adminApi.create(RESOURCE, values)
-      else await adminApi.update(RESOURCE, id, values)
+      if (isNew) await adminApi.create(RESOURCE, { ...values, modified_by: currentUser?.username }, currentUser?.username)
+      else await adminApi.update(RESOURCE, id, values, currentUser?.username)
       navigate('/admin/roles')
     } catch (err) {
       setError('Save failed. Check required fields and try again.')
@@ -44,23 +49,12 @@ export default function RolesFormPage() {
       </h1>
 
       <div>
-        <label className="block text-sm text-slate-600 mb-1">Code</label>
-        <input
-          type="text"
-          className="w-full border border-slate-300 rounded-md px-3 py-2 text-sm"
-          value={values.code || ''}
-          onChange={(e) => setField('code', e.target.value)}
-          required
-        />
-      </div>
-
-      <div>
         <label className="block text-sm text-slate-600 mb-1">Name</label>
         <input
           type="text"
           className="w-full border border-slate-300 rounded-md px-3 py-2 text-sm"
-          value={values.name || ''}
-          onChange={(e) => setField('name', e.target.value)}
+          value={values.role_name || ''}
+          onChange={(e) => setField('role_name', e.target.value)}
           required
         />
       </div>

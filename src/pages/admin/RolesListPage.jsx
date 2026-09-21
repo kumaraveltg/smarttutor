@@ -8,8 +8,12 @@ const RESOURCE = 'user-roles' // matches backend prefix /admin/user-roles
 const LABEL = 'User Roles'
 const PAGE_SIZE_OPTIONS = [10, 25, 100, 500, 'All']
 const COLUMNS = [
-  { key: 'code', label: 'Code' },
-  { key: 'name', label: 'Name' },
+    { key: 'role_name', label: 'Role Name' },
+    { key: 'created_on', label: 'Created On' },
+    { key: 'created_by', label: 'Created By' },
+    { key: 'modified_on', label: 'Modified On' },
+    { key: 'modified_by', label: 'Modified By' },
+
 ]
 
 export default function RolesListPage() {
@@ -24,7 +28,9 @@ export default function RolesListPage() {
     setLoading(true)
     setError(null)
     try {
-      setRows(await adminApi.list(RESOURCE))
+    const data = await adminApi.list(RESOURCE)
+    console.log('roles response:', data)
+    setRows(data)
     } catch (err) {
       setError('Could not load data. Check the API connection.')
     } finally {
@@ -40,9 +46,9 @@ export default function RolesListPage() {
     setPage(1)
   }, [search])
 
-  async function handleDelete(id) {
+  async function handleDelete(role_id) {
     if (!confirm('Delete this record?')) return
-    await adminApi.remove(RESOURCE, id)
+    await adminApi.remove(RESOURCE, role_id)
     load()
   }
 
@@ -109,20 +115,20 @@ export default function RolesListPage() {
             </thead>
             <tbody>
               {pagedRows.map((row) => (
-                <tr key={row.id} className="border-t border-slate-100">
+                <tr key={row.role_id} className="border-t border-slate-100">
                   {COLUMNS.map((col) => (
                     <td key={col.key} className="px-4 py-2">{renderCell(row, col)}</td>
                   ))}
                   <td className="px-4 py-2 space-x-2">
                     <Link
-                      to={`/admin/roles/${row.id}`}
+                      to={`/admin/roles/${row.role_id}`}
                       className="inline-flex items-center text-brand-600 hover:text-brand-700"
                       title="Edit"
                     >
                       <Pencil size={16} />
                     </Link>
                     <button
-                      onClick={() => handleDelete(row.id)}
+                      onClick={() => handleDelete(row.role_id)}
                       className="inline-flex items-center text-red-600 hover:text-red-700"
                       title="Delete"
                     >

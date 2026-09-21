@@ -55,8 +55,8 @@ export default function UsersFormPage() {
         delete payload.password
       }
 
-      if (isNew) await adminApi.create(RESOURCE, payload)
-      else await adminApi.update(RESOURCE, id, payload)
+      if (isNew) await adminApi.create(RESOURCE, { ...payload, modified_by: currentUser?.username }, currentUser?.username)
+      else await adminApi.update(RESOURCE, id, payload,currentUser?.username)
       navigate('/admin/users')
     } catch (err) {
       const detail = err?.response?.data?.detail
@@ -66,12 +66,13 @@ export default function UsersFormPage() {
     }
   }
 
-  return (
-    <form onSubmit={handleSubmit} className="max-w-lg bg-white rounded-lg shadow-sm p-6 space-y-4">
-      <h1 className="text-lg font-semibold text-slate-800">
-        {isNew ? `Add ${LABEL}` : `Edit ${LABEL}`}
-      </h1>
+ return (
+  <form onSubmit={handleSubmit} className="max-w-4xl bg-white rounded-lg shadow-sm p-6 space-y-6">
+    <h1 className="text-lg font-semibold text-slate-800">
+      {isNew ? `Add ${LABEL}` : `Edit ${LABEL}`}
+    </h1>
 
+    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
       <div>
         <label className="block text-sm text-slate-600 mb-1">Username</label>
         <input
@@ -92,36 +93,38 @@ export default function UsersFormPage() {
           onChange={(e) => setField('full_name', e.target.value)}
         />
       </div>
+
       <div>
-          <label className="block text-sm text-slate-600 mb-1">Email</label>
-          <input
-            type="email"
-            className="w-full border border-slate-300 rounded-md px-3 py-2 text-sm"
-            value={values.email_id || ''}
-            onChange={(e) => setField('email_id', e.target.value)}
-            required
-          />
-        </div>
+        <label className="block text-sm text-slate-600 mb-1">Email</label>
+        <input
+          type="email"
+          className="w-full border border-slate-300 rounded-md px-3 py-2 text-sm"
+          value={values.email_id || ''}
+          onChange={(e) => setField('email_id', e.target.value)}
+          required
+        />
+      </div>
 
-        <div>
-          <label className="block text-sm text-slate-600 mb-1">Mobile</label>
-          <input
-            type="text"
-            className="w-full border border-slate-300 rounded-md px-3 py-2 text-sm"
-            value={values.mobile || ''}
-            onChange={(e) => setField('mobile', e.target.value)}
-          />
-        </div>
+      <div>
+        <label className="block text-sm text-slate-600 mb-1">Mobile</label>
+        <input
+          type="text"
+          className="w-full border border-slate-300 rounded-md px-3 py-2 text-sm"
+          value={values.mobile || ''}
+          onChange={(e) => setField('mobile', e.target.value)}
+        />
+      </div>
 
-        <div>
-          <label className="block text-sm text-slate-600 mb-1">Device ID</label>
-          <input
-            type="text"
-            className="w-full border border-slate-300 rounded-md px-3 py-2 text-sm"
-            value={values.device_id || ''}
-            onChange={(e) => setField('device_id', e.target.value)}
-          />
-        </div>
+      <div>
+        <label className="block text-sm text-slate-600 mb-1">Device ID</label>
+        <input
+          type="text"
+          className="w-full border border-slate-300 rounded-md px-3 py-2 text-sm"
+          value={values.device_id || ''}
+          onChange={(e) => setField('device_id', e.target.value)}
+        />
+      </div>
+
       <div>
         <label className="block text-sm text-slate-600 mb-1">Role</label>
         <select
@@ -154,33 +157,36 @@ export default function UsersFormPage() {
         </div>
       )}
 
-      <div>
-        <label className="block text-sm text-slate-600 mb-1">Active</label>
-        <input
-          type="checkbox"
-          checked={!!values.is_active}
-          onChange={(e) => setField('is_active', e.target.checked)}
-        />
+      <div className="flex items-end">
+        <label className="flex items-center gap-2 text-sm text-slate-600">
+          <input
+            type="checkbox"
+            checked={!!values.is_active}
+            onChange={(e) => setField('is_active', e.target.checked)}
+          />
+          Active
+        </label>
       </div>
+    </div>
 
-      {error && <p className="text-red-600 text-sm">{error}</p>}
+    {error && <p className="text-red-600 text-sm">{error}</p>}
 
-      <div className="flex gap-2">
-        <button
-          type="submit"
-          disabled={saving}
-          className="bg-brand-500 hover:bg-brand-600 text-white px-4 py-2 rounded-md text-sm"
-        >
-          {saving ? 'Saving…' : 'Save'}
-        </button>
-        <button
-          type="button"
-          onClick={() => navigate(-1)}
-          className="px-4 py-2 rounded-md text-sm text-slate-600 hover:bg-slate-100"
-        >
-          Cancel
-        </button>
-      </div>
-    </form>
-  )
+    <div className="flex gap-2">
+      <button
+        type="submit"
+        disabled={saving}
+        className="bg-brand-500 hover:bg-brand-600 text-white px-4 py-2 rounded-md text-sm"
+      >
+        {saving ? 'Saving…' : 'Save'}
+      </button>
+      <button
+        type="button"
+        onClick={() => navigate(-1)}
+        className="px-4 py-2 rounded-md text-sm text-slate-600 hover:bg-slate-100"
+      >
+        Cancel
+      </button>
+    </div>
+  </form>
+)
 }
