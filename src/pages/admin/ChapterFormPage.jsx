@@ -3,6 +3,7 @@ import { useNavigate, useParams } from 'react-router-dom'
 import { adminApi } from '../../api/adminApi'
 import { useAuth } from '../../auth/AuthContext'
 import { toTamil } from '../../utils/transliterate'
+import { useRef } from 'react'
 
 
 const RESOURCE = 'chapters'
@@ -19,6 +20,7 @@ export default function ChapterFormPage() {
   const [saving, setSaving] = useState(false)
   const [translating, setTranslating] = useState(false)
   const [error, setError] = useState(null)
+  const debounceRef = useRef(null)
 
   useEffect(() => {
   if (!isNew) {
@@ -39,7 +41,25 @@ export default function ChapterFormPage() {
 
   function handleTamilInput(e) {
   const raw = e.target.value
-  setField('title_ta', toTamil(raw))
+  setField('title_ta', raw) // show raw text immediately, no lag
+
+  const endsWithBoundary = /[\s.,!?]$/.test(raw)
+
+  clearTimeout(debounceRef.current)
+
+  if (endsWithBoundary) {
+    // Word just finished — convert right away, no waiting
+    convertAndSet(raw)
+  } else {
+    // Still mid-word — wait briefly in case they keep typing,
+    // but much shorter than before
+    debounceRef.current = setTimeout(() => convertAndSet(raw), 150)
+  }
+}
+
+async function convertAndSet(raw) {
+  const converted = await toTamil(raw)
+  setField('title_ta', converted)
 }
 
   function setField(key, val) {
@@ -162,12 +182,12 @@ export default function ChapterFormPage() {
             </button>
           </label>
           <input
-          type="text"
-          autoComplete="off"
-          className="w-full border border-slate-300 rounded-md px-3 py-2 text-sm"
-          value={values.title_ta || ''}
-          onChange={(e) => setField('title_ta', e.target.value)}
-        />
+            type="text"
+            autoComplete="off"
+            className="w-full border border-slate-300 rounded-md px-3 py-2 text-sm"
+            value={values.title_ta || ''}
+            onChange={handleTamilInput}
+          />
         </div>
 
         <div>
