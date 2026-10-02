@@ -10,6 +10,7 @@ export const adminApi = {
     client.post(`/admin/${resource}/`, {
       ...payload,
       created_by: username || 'unknown',
+      modified_by: username || 'unknown',
     }),
 
   update: (resource, id, payload, username) =>
@@ -29,6 +30,12 @@ export const adminApi = {
       title,
       modified_by: username || 'unknown',
     }),
+    
+  upsertQuestionTranslation: (id, langCode, questionText, username) =>
+  client.put(`/admin/questions/${id}/translations/${langCode}`, {
+    question_text: questionText,
+    modified_by: username || 'unknown',
+  }),  
 
   deleteTranslation: (resource, id, langCode) =>
     client.delete(`/admin/${resource}/${id}/translations/${langCode}`),

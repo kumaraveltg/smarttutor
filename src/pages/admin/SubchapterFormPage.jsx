@@ -18,7 +18,10 @@ export default function SubchapterFormPage() {
   const [saving, setSaving] = useState(false)
   const [translating, setTranslating] = useState(false)
   const [error, setError] = useState(null)
-  const debounceRef = useRef(null)
+  const debounceRef = useRef(null) 
+  const savingRef = useRef(false)
+  const createdIdRef = useRef(null)
+
 
   useEffect(() => {
     if (!isNew) {
@@ -101,24 +104,30 @@ export default function SubchapterFormPage() {
   }
 
   async function handleSubmit(e) {
-    e.preventDefault()
-    setSaving(true)
-    setError(null)
-    try {
-      if (isNew) {
-        const created = await adminApi.create(RESOURCE, values, currentUser?.username)
-        await syncTranslation(created.subchapter_id)
-      } else {
-        await adminApi.update(RESOURCE, id, values, currentUser?.username)
-        await syncTranslation(id)
-      }
-      navigate('/admin/subchapter')
-    } catch (err) {
-      setError('Save failed. Check required fields and try again.')
-    } finally {
-      setSaving(false)
+  e.preventDefault()
+  if (savingRef.current) return      // blocks the second click instantly
+  savingRef.current = true
+  setSaving(true)
+  setError(null)
+  try {
+    // New record that was already created on an earlier attempt: update it, don't create again
+    const existingId = isNew ? createdIdRef.current : id
+
+    if (existingId) {
+      await adminApi.update(RESOURCE, existingId, values, currentUser?.username)
+      await syncTranslation(existingId)
+    } else {
+      const created = await adminApi.create(RESOURCE, values, currentUser?.username)
+      createdIdRef.current = created.subchapter_id
+      await syncTranslation(created.subchapter_id)
     }
+    navigate('/admin/subchapter')
+  } catch (err) {
+    setError(err?.response?.data?.detail || 'Save failed. Check required fields and try again.')
+    savingRef.current = false         // allow a retry only after a failure
+    setSaving(false)
   }
+}
 
   return (
     <form onSubmit={handleSubmit} className="max-w-3xl bg-white rounded-lg shadow-sm p-6 space-y-4">
@@ -204,7 +213,7 @@ export default function SubchapterFormPage() {
             <input
               type="checkbox"
               checked={!!values.is_active}
-              onChange={(e) => setField('is_active', e.target.checked)}
+              onChange={(e) => setField(... values,'is_active', e.target.checked)}
             />
             Active
           </label>

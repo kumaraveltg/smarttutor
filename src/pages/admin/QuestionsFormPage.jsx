@@ -161,10 +161,8 @@ export default function QuestionsFormPage() {
     try {
       // class, subject and medium always come from the chapter, so they cannot be mismatched.
       const payload = {
-        ...values,
-        parent_id: values.parent_id || null,
-        chapter_id: chapter.chapter_id,
-        subchapter_id: sub.subchapter_id,
+        ...values, 
+        chapter_id: chapter.chapter_id, 
         class_id: chapter.class_lov_id,
         subject_id: chapter.subject_lov_id,
         medium_id: chapter.medium_lov_id,

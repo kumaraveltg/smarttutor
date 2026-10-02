@@ -8,14 +8,13 @@ const LABEL = 'Subchapters'
 const PAGE_SIZE_OPTIONS = [10, 25, 100, 500, 'All']
 const COLUMNS = [
   { key: 'subchapter_no', label: 'Subchapter No' },
-  { key: 'title_en', label: 'Title' },
-  { key: 'ta_title', label: 'Title (TA)' },
+  { key: 'title_en', label: 'Title' }, 
   { key: 'sort_order', label: 'Sort' },
   { key: 'is_active', label: 'Active' },
   { key: 'created_by', label: 'Created By' },
-  { key: 'created_at', label: 'Created At' },
+  { key: 'created_on', label: 'Created At' },
   { key: 'modified_by', label: 'Modified By' },
-  { key: 'modified_at', label: 'Modified At' },
+  { key: 'modified_on', label: 'Modified At' },
 ]
 
 export default function SubchapterListPage() {
@@ -25,6 +24,7 @@ export default function SubchapterListPage() {
   const [search, setSearch] = useState('')
   const [pageSize, setPageSize] = useState(10)
   const [page, setPage] = useState(1)
+  const DATE_KEYS = ['created_on', 'modified_on']
 
   async function load() {
     setLoading(true)
@@ -54,9 +54,23 @@ export default function SubchapterListPage() {
     load()
   }
 
+  function formatDateTime(value) {
+  if (!value) return ''
+  // if the backend sends a time with no timezone, treat it as UTC
+  const v = typeof value === 'string' && value.includes('T') && !/(Z|[+-]\d{2}:?\d{2})$/i.test(value)
+    ? value + 'Z'
+    : value
+  const d = new Date(v)
+  if (isNaN(d)) return String(value)
+  return d.toLocaleString('en-IN', {
+    day: '2-digit', month: 'short', year: 'numeric',
+    hour: '2-digit', minute: '2-digit', hour12: true,
+  })
+}
   function renderCell(row, col) {
-    return String(row[col.key] ?? '')
-  }
+  if (DATE_KEYS.includes(col.key)) return formatDateTime(row[col.key])
+  return String(row[col.key] ?? '')
+}
 
   const filteredRows = useMemo(() => {
     const term = search.trim().toLowerCase()
