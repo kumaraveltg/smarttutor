@@ -6,6 +6,7 @@ import { adminApi } from '../../api/adminApi'
 import { useAuth } from '../../auth/AuthContext'
 import MathText from '../../components/MathText'
 
+
 const RESOURCE = 'questions'
 const LABEL = 'Questions'
 const PAGE_SIZE_OPTIONS = [10, 25, 100, 'All']
@@ -56,7 +57,7 @@ export default function QuestionsListPage() {
   const [page, setPage] = useState(1)
   const [lang, setLang] = useState('en')
   const showTamil = lang === 'ta'
-  const titleOf = (row) => (showTamil && row.title_ta ? row.title_ta : row.title_en)
+  const titleOf = (row) => (showTamil && row.title_ta ? row.title_ta : row.title_en) 
 
   async function loadAll() {
     setLoading(true)
@@ -218,7 +219,7 @@ export default function QuestionsListPage() {
     let items = []
     try {
       const wb = XLSX.read(await file.arrayBuffer())
-      const raw = XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]], { defval: '' })
+      const raw = XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]], { defval: '', raw: false })
       items = raw
         .map((r, i) => {
           const get = (name) => {

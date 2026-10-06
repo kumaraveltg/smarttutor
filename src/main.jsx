@@ -4,6 +4,9 @@ import { BrowserRouter } from 'react-router-dom'
 import App from './App.jsx'
 import { AuthProvider } from './auth/AuthContext.jsx'
 import './index.css'
+import { MathfieldElement } from 'mathlive';
+
+MathfieldElement.fontsDirectory = '/fonts'
 
 ReactDOM.createRoot(document.getElementById('root')).render(
   <React.StrictMode>
