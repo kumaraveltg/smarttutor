@@ -5,6 +5,8 @@ import { useAuth } from '../../auth/AuthContext'
 import MathInput from '../../components/practice/MathInput'
 import MathText, { protectMath, restoreMath } from '../../components/MathText'
 import { toTamil } from '../../utils/transliterate'
+import QuestionImages, { uploadImage } from './QuestionImages'
+import FunctionPlotter from '../../graph/FunctionPlotter';
 
 const API_BASE = 'http://127.0.0.1:8000'
 
@@ -52,27 +54,34 @@ export default function QuestionsFormPage() {
   const translationEdited = useRef(false) 
   const [typeTamil, setTypeTamil] = useState(true)
   const transRef = useRef(null)
+  const [pendingImages, setPendingImages] = useState([])
+  const [graph, setGraph] = useState(null)
+  const [loaded, setLoaded] = useState(false)
 
 
   useEffect(() => {
-    if (!isNew) {
-      sortTouched.current = true // editing: keep the saved sort order
-      translationEdited.current = true // editing: keep the saved translation // editing: keep the saved sort order
-      adminApi
-        .get(RESOURCE, id)
-        .then(setValues)
-        .catch((err) => setError('Could not load question. ' + (err.status ? `(${err.status})` : '')))
-    } else {
-      // URL: /admin/questions/new?chapter=<chapter_id>&ex=<exercise_no>
-      const ch = Number(params.get('chapter'))
-      setValues({
-        chapter_id: ch || null,
-        parent_id: null,
-        exercise_no: params.get('ex') || '',
-        sort_order: 1,
+  if (!isNew) {
+    sortTouched.current = true
+    translationEdited.current = true
+    adminApi
+      .get(RESOURCE, id)
+      .then((data) => {
+        setValues(data)
+        setGraph(data.graph_json || null)     // added
+        setLoaded(true)                       // added
       })
-    }
-  }, [id])
+      .catch((err) => setError('Could not load question. ' + (err.status ? `(${err.status})` : '')))
+  } else {
+    const ch = Number(params.get('chapter'))
+    setValues({
+      chapter_id: ch || null,
+      parent_id: null,
+      exercise_no: params.get('ex') || '',
+      sort_order: 1,
+    })
+    setLoaded(true)                           // added
+  }
+}, [id])
 
   useEffect(() => {
     adminApi.list('chapters').then(setChapters).catch(() => {})
@@ -238,9 +247,14 @@ async function convertWordBeforeCaret(text, caret) {
         sort_order: Number(values.sort_order) || 0,
         chapter_id: chapter.chapter_id,
         modified_by: currentUser?.username,
+        graph_json: (graph?.functions?.length || graph?.shapes?.length) ? graph : null,
       }
-      if (isNew) await adminApi.create(RESOURCE, payload, currentUser?.username)
-      else await adminApi.update(RESOURCE, id, payload, currentUser?.username)
+      if (isNew) {
+        const created = await adminApi.create(RESOURCE, payload, currentUser?.username)
+        for (const f of pendingImages) await uploadImage(created.question_id, f)
+      } else {
+        await adminApi.update(RESOURCE, id, payload, currentUser?.username)
+      }
       navigate(`/admin/questions?chapter=${chapter.chapter_id}`)
     } catch (err) {
       setError('Save failed. Check required fields and try again.')
@@ -419,7 +433,25 @@ async function convertWordBeforeCaret(text, caret) {
           />
           {translateNote && <p className="text-sm text-amber-700 mt-1">{translateNote}</p>}
         </div>
-      {error && <p className="text-red-600 text-sm">{error}</p>}
+        <QuestionImages
+          questionId={isNew ? null : Number(id)}
+          pending={pendingImages}
+          setPending={setPendingImages}
+        />
+            {error && <p className="text-red-600 text-sm">{error}</p>}
+
+      <div>
+        <label className="block text-sm text-slate-600 mb-1">Graph (optional)</label>
+        {loaded && (
+          <FunctionPlotter
+            initialFunctions={graph?.functions || ['x^2']}
+            initialShapes={graph?.shapes}
+            initialView={graph?.view}
+            initialDegrees={graph?.degrees}
+            onChange={(g) => setGraph(g)}
+          />
+        )}
+      </div>
 
       <div className="flex gap-2">
         <button

@@ -1,0 +1,211 @@
+/* Function plotter: plain CSS, every class starts with fp- so nothing leaks into the rest of the app */
+
+.fp-root {
+  font-family: system-ui, -apple-system, 'Segoe UI', sans-serif;
+  color: #0f172a;
+  max-width: 100%;
+}
+
+/* equations */
+.fp-functions { margin-bottom: 10px; }
+
+.fp-row {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 6px;
+}
+
+.fp-check { width: 16px; height: 16px; cursor: pointer; }
+
+.fp-swatch {
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  flex: none;
+}
+
+.fp-input {
+  flex: 1 1 160px;
+  min-width: 0;
+  padding: 7px 10px;
+  font-size: 15px;
+  font-family: ui-monospace, 'Cascadia Mono', Consolas, monospace;
+  border: 1px solid #cbd5e1;
+  border-radius: 6px;
+  background: #fff;
+}
+.fp-input:focus { outline: 2px solid #93c5fd; border-color: #2563eb; }
+.fp-input.fp-invalid { border-color: #dc2626; background: #fef2f2; }
+
+.fp-error {
+  flex-basis: 100%;
+  margin-left: 52px;
+  font-size: 12px;
+  color: #b91c1c;
+}
+
+.fp-icon-btn {
+  width: 28px;
+  height: 28px;
+  border: none;
+  border-radius: 6px;
+  background: transparent;
+  font-size: 20px;
+  line-height: 1;
+  color: #64748b;
+  cursor: pointer;
+}
+.fp-icon-btn:hover { background: #f1f5f9; color: #dc2626; }
+
+/* points and shapes */
+.fp-square { border-radius: 3px; }
+.fp-shape { margin-bottom: 8px; }
+.fp-shape-opts {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px;
+  margin: 0 0 4px 52px;
+}
+.fp-shape-opts select {
+  padding: 5px 8px;
+  font-size: 13px;
+  border: 1px solid #cbd5e1;
+  border-radius: 6px;
+  background: #fff;
+  color: #0f172a;
+}
+.fp-chip:disabled { opacity: 0.45; cursor: not-allowed; }
+
+/* buttons, toggles */
+.fp-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px;
+  margin-top: 8px;
+}
+
+.fp-btn {
+  padding: 6px 12px;
+  font-size: 13px;
+  border: 1px solid #cbd5e1;
+  border-radius: 6px;
+  background: #fff;
+  color: #0f172a;
+  cursor: pointer;
+}
+.fp-btn:hover:not(:disabled) { background: #f1f5f9; }
+.fp-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+.fp-segment { display: inline-flex; border: 1px solid #cbd5e1; border-radius: 6px; overflow: hidden; }
+.fp-segment button {
+  padding: 6px 12px;
+  font-size: 13px;
+  border: none;
+  background: #fff;
+  color: #334155;
+  cursor: pointer;
+}
+.fp-segment button + button { border-left: 1px solid #cbd5e1; }
+.fp-segment button.fp-on { background: #2563eb; color: #fff; }
+
+.fp-toggle { display: inline-flex; align-items: center; gap: 6px; font-size: 13px; color: #334155; cursor: pointer; }
+
+.fp-examples {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+  margin-top: 8px;
+  font-size: 12px;
+  color: #64748b;
+}
+.fp-chip {
+  padding: 3px 9px;
+  font-size: 12px;
+  font-family: ui-monospace, 'Cascadia Mono', Consolas, monospace;
+  border: 1px solid #e2e8f0;
+  border-radius: 999px;
+  background: #f8fafc;
+  color: #334155;
+  cursor: pointer;
+}
+.fp-chip:hover { background: #e0f2fe; border-color: #93c5fd; }
+
+/* canvas */
+.fp-canvas-wrap {
+  position: relative;
+  border: 1px solid #cbd5e1;
+  border-radius: 8px;
+  overflow: hidden;
+  background: #fff;
+  line-height: 0;
+}
+
+.fp-canvas {
+  display: block;
+  cursor: grab;
+  touch-action: none; /* lets a finger drag the graph instead of scrolling the page */
+  user-select: none;
+}
+.fp-canvas:active { cursor: grabbing; }
+
+.fp-zoom {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.fp-zoom button {
+  width: 30px;
+  height: 30px;
+  border: 1px solid #cbd5e1;
+  border-radius: 6px;
+  background: rgba(255, 255, 255, 0.92);
+  font-size: 17px;
+  line-height: 1;
+  color: #334155;
+  cursor: pointer;
+}
+.fp-zoom button:hover { background: #f1f5f9; }
+
+/* readout under the graph */
+.fp-readout {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 14px;
+  min-height: 22px;
+  margin-top: 6px;
+  font-size: 13px;
+  font-variant-numeric: tabular-nums;
+}
+.fp-hint { color: #94a3b8; }
+
+/* range boxes */
+.fp-ranges {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: 10px;
+  margin-top: 8px;
+}
+.fp-field { display: flex; flex-direction: column; gap: 2px; font-size: 12px; color: #64748b; }
+.fp-field input {
+  width: 72px;
+  padding: 5px 7px;
+  font-size: 13px;
+  border: 1px solid #cbd5e1;
+  border-radius: 6px;
+}
+.fp-field input:focus { outline: 2px solid #93c5fd; border-color: #2563eb; }
+
+@media (max-width: 520px) {
+  .fp-error { margin-left: 0; }
+  .fp-shape-opts { margin-left: 0; }
+  .fp-field input { width: 64px; }
+}
