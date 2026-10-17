@@ -3,17 +3,26 @@ import { useNavigate, useParams, useSearchParams } from 'react-router-dom'
 import { adminApi } from '../../api/adminApi'
 import QuestionPicker from './QuestionPicker'
 import QuestionPreview from './QuestionPreview'
+import StepMedia from './StepMedia'
 
 const RESOURCE = 'answers'
 const LABEL = 'Answer'
-const LANG = 'ta'   // Tamil; more languages can be added later
 
-const emptyStep = (n) => ({
-  step_no: n, step_text: '', hint_text: '', ta_step: '', ta_hint: '',
-})
+// ---------------------------------------------------------------------------
+// LANGUAGES: English is always the first column. To add Kannada, uncomment the
+// 'kn' line below. A new column, a row "Translate" button and the save payload
+// all follow from this list automatically.
+// ---------------------------------------------------------------------------
+const LANGUAGES = [
+  { code: 'ta', label: 'Tamil' },
+  // { code: 'kn', label: 'Kannada' },
+]
+
+const emptyTr = () => Object.fromEntries(LANGUAGES.map((l) => [l.code, '']))
+const emptyStep = (n) => ({ step_no: n, step_text: '', tr: emptyTr(), images: [], graph: null })
 
 const S = {
-  card: { maxWidth: 1000, background: '#fff', borderRadius: 8, padding: 24,
+  card: { maxWidth: 1200, background: '#fff', borderRadius: 8, padding: 24,
           boxShadow: '0 1px 2px rgba(0,0,0,0.08)' },
   title: { fontSize: 18, fontWeight: 600, color: '#1e293b', margin: '0 0 16px' },
   label: { display: 'block', fontSize: 14, color: '#475569', marginBottom: 4 },
@@ -34,7 +43,11 @@ const S = {
           borderRadius: 4, padding: '6px 8px', fontSize: 14, fontFamily: 'inherit',
           marginBottom: 4 },
   small: { border: '1px solid #cbd5e1', background: '#fff', borderRadius: 4,
-           padding: '2px 8px', cursor: 'pointer', fontSize: 13, marginRight: 4 },
+           padding: '2px 8px', cursor: 'pointer', fontSize: 13, marginRight: 4,
+           marginBottom: 4 },
+  trRow: { border: '1px solid #16a34a', background: '#f0fdf4', color: '#166534',
+           borderRadius: 4, padding: '2px 8px', cursor: 'pointer', fontSize: 13,
+           marginBottom: 4, display: 'block', width: '100%' },
   del: { border: '1px solid #fca5a5', background: '#fff', color: '#dc2626',
          borderRadius: 4, padding: '2px 8px', cursor: 'pointer', fontSize: 13 },
   add: { border: '1px dashed #94a3b8', background: '#f8fafc', color: '#334155',
@@ -60,7 +73,7 @@ export default function AnswersFormPage() {
   const [finalAnswer, setFinalAnswer] = useState('')
   const [steps, setSteps] = useState([emptyStep(1)])
   const [saving, setSaving] = useState(false)
-  const [translating, setTranslating] = useState(false)
+  const [busy, setBusy] = useState(null)          // row index, 'all', or null
   const [error, setError] = useState(null)
 
   useEffect(() => {
@@ -71,13 +84,16 @@ export default function AnswersFormPage() {
       setSteps(
         a.steps && a.steps.length
           ? a.steps.map((s) => {
-              const t = (s.translations || []).find((x) => x.language_code === LANG) || {}
+              const tr = emptyTr()
+              for (const t of s.translations || []) {
+                if (t.language_code in tr) tr[t.language_code] = t.step_text || ''
+              }
               return {
                 step_no: s.step_no,
                 step_text: s.step_text || '',
-                hint_text: s.hint_text || '',
-                ta_step: t.step_text || '',
-                ta_hint: t.hint_text || '',
+                tr,
+                images: s.images || [],
+                graph: s.graph || null,
               }
             })
           : [emptyStep(1)]
@@ -86,8 +102,10 @@ export default function AnswersFormPage() {
   }, [id])
 
   const renumber = (list) => list.map((s, i) => ({ ...s, step_no: i + 1 }))
-  const updateStep = (i, f, v) =>
-    setSteps((p) => p.map((s, idx) => (idx === i ? { ...s, [f]: v } : s)))
+  const updateStep = (i, patch) =>
+    setSteps((p) => p.map((s, idx) => (idx === i ? { ...s, ...patch } : s)))
+  const updateTr = (i, code, v) =>
+    setSteps((p) => p.map((s, idx) => (idx === i ? { ...s, tr: { ...s.tr, [code]: v } } : s)))
   const addStep = () => setSteps((p) => [...p, emptyStep(p.length + 1)])
   const removeStep = (i) =>
     setSteps((p) => {
@@ -103,27 +121,37 @@ export default function AnswersFormPage() {
       return renumber(n)
     })
 
-  async function translateAll() {
+  // Translate some rows. overwrite=true: replace existing text (row button).
+  // overwrite=false: fill only empty cells ("Translate all"), so earlier edits are kept.
+  async function translateRows(indexes, overwrite) {
     setError(null)
-    if (steps.every((s) => !s.step_text.trim())) {
-      setError('Write the English steps first.')
+    const rows = indexes.filter((i) => steps[i].step_text.trim())
+    if (!rows.length) {
+      setError('Write the English step first.')
       return
     }
-    setTranslating(true)
+    setBusy(indexes.length === 1 ? indexes[0] : 'all')
     try {
       const res = await adminApi.create('answers/translate-preview', {
-        steps: steps.map((s) => ({ step_text: s.step_text, hint_text: s.hint_text })),
+        steps: rows.map((i) => ({ step_text: steps[i].step_text })),
+        languages: LANGUAGES.map((l) => l.code),
       })
       setSteps((prev) =>
         prev.map((s, i) => {
-          const t = (res[i]?.translations || []).find((x) => x.language_code === LANG) || {}
-          return { ...s, ta_step: t.step_text || '', ta_hint: t.hint_text || '' }
+          const k = rows.indexOf(i)
+          if (k < 0) return s
+          const tr = { ...s.tr }
+          for (const t of res[k]?.translations || []) {
+            if (!(t.language_code in tr)) continue
+            if (overwrite || !tr[t.language_code].trim()) tr[t.language_code] = t.step_text || ''
+          }
+          return { ...s, tr }
         })
       )
     } catch (e) {
       setError('Translation failed. You can still save; it will retry on save.')
     } finally {
-      setTranslating(false)
+      setBusy(null)
     }
   }
 
@@ -144,10 +172,12 @@ export default function AnswersFormPage() {
       steps: steps.map((s, i) => ({
         step_no: i + 1,
         step_text: s.step_text,
-        hint_text: s.hint_text || null,
-        translations: [
-          { language_code: LANG, step_text: s.ta_step || null, hint_text: s.ta_hint || null },
-        ],
+        images: s.images,
+        graph: s.graph,
+        translations: LANGUAGES.map((l) => ({
+          language_code: l.code,
+          step_text: s.tr[l.code] || null,
+        })),
       })),
     }
     setSaving(true)
@@ -174,32 +204,41 @@ export default function AnswersFormPage() {
         <thead>
           <tr>
             <th style={{ ...S.th, width: 44, textAlign: 'center' }}>No</th>
-            <th style={S.th}>Step / Hint (English)</th>
-            <th style={S.thTa}>Step / Hint (Tamil)</th>
-            <th style={{ ...S.th, width: 110 }}>Actions</th>
+            <th style={S.th}>Step (English), images and graph</th>
+            {LANGUAGES.map((l) => (
+              <th key={l.code} style={S.thTa}>Step ({l.label})</th>
+            ))}
+            <th style={{ ...S.th, width: 120 }}>Actions</th>
           </tr>
         </thead>
         <tbody>
           {steps.map((s, i) => (
             <tr key={i}>
               <td style={S.noCell}>{s.step_no}</td>
+
               <td style={S.td}>
-                <textarea rows={2} style={S.cell} placeholder="Step (English)"
+                <textarea rows={3} style={S.cell} placeholder="Step (English)"
                   value={s.step_text}
-                  onChange={(e) => updateStep(i, 'step_text', e.target.value)} />
-                <textarea rows={1} style={S.cell} placeholder="Hint (optional)"
-                  value={s.hint_text}
-                  onChange={(e) => updateStep(i, 'hint_text', e.target.value)} />
+                  onChange={(e) => updateStep(i, { step_text: e.target.value })} />
+                <StepMedia
+                  questionId={questionId}
+                  value={{ images: s.images, graph: s.graph }}
+                  onChange={(patch) => updateStep(i, patch)} />
               </td>
-              <td style={S.tdTa}>
-                <textarea rows={2} style={S.cell} placeholder="Tamil step"
-                  value={s.ta_step}
-                  onChange={(e) => updateStep(i, 'ta_step', e.target.value)} />
-                <textarea rows={1} style={S.cell} placeholder="Tamil hint"
-                  value={s.ta_hint}
-                  onChange={(e) => updateStep(i, 'ta_hint', e.target.value)} />
-              </td>
+
+              {LANGUAGES.map((l) => (
+                <td key={l.code} style={S.tdTa}>
+                  <textarea rows={3} style={S.cell} placeholder={`${l.label} step`}
+                    value={s.tr[l.code]}
+                    onChange={(e) => updateTr(i, l.code, e.target.value)} />
+                </td>
+              ))}
+
               <td style={S.td}>
+                <button type="button" style={S.trRow} disabled={busy !== null}
+                  onClick={() => translateRows([i], true)}>
+                  {busy === i ? '…' : 'Translate'}
+                </button>
                 <button type="button" style={S.small} disabled={i === 0}
                   onClick={() => moveStep(i, -1)}>↑</button>
                 <button type="button" style={S.small} disabled={i === steps.length - 1}
@@ -212,8 +251,9 @@ export default function AnswersFormPage() {
       </table>
 
       <button type="button" style={S.add} onClick={addStep}>+ Add step</button>
-      <button type="button" style={S.tr} onClick={translateAll} disabled={translating}>
-        {translating ? 'Translating…' : 'Translate to Tamil'}
+      <button type="button" style={S.tr} disabled={busy !== null}
+        onClick={() => translateRows(steps.map((_, i) => i), false)}>
+        {busy === 'all' ? 'Translating…' : 'Translate all (empty cells only)'}
       </button>
 
       <div style={S.field}>
