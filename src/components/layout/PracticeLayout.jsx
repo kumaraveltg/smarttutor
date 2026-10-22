@@ -1,6 +1,8 @@
-import { NavLink, Outlet } from 'react-router-dom'
+import { NavLink, Outlet, useNavigate } from 'react-router-dom'
+import { useEffect } from 'react'
 import { MessageSquare } from 'lucide-react'
 import TopBar from '../layout/TopBar'
+import { studentApi } from '../../api/studentApi'
 
 // Add more entries here as practice section grows (e.g. History, Progress).
 const NAV_ITEMS = [
@@ -8,6 +10,12 @@ const NAV_ITEMS = [
 ]
 
 export default function PracticeLayout() {
+  const navigate = useNavigate()
+useEffect(() => {
+  studentApi.me()
+    .then((m) => { if (!m.subscription.has_access) navigate('/payment', { replace: true }) })
+    .catch(() => {})   // admins/teachers get 404 here, so ignore it
+}, [])
   return (
     <div className="flex min-h-screen bg-slate-50">
       <aside className="w-56 shrink-0 bg-white border-r border-slate-200 p-4 flex flex-col">

@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 import { useAuth } from '../auth/AuthContext'
 
 export default function LoginPage() {
@@ -36,10 +36,16 @@ export default function LoginPage() {
           value={password}
           onChange={(e) => setPassword(e.target.value)}
         />
+        <Link to="/forgot-password" className="text-sm text-slate-500 hover:underline">
+          Forgot password?
+        </Link>
         {error && <p className="text-red-600 text-sm">{error}</p>}
         <button className="w-full bg-brand-500 hover:bg-brand-600 text-white py-2 rounded-md text-sm">
           Sign in
         </button>
+        <p className="text-sm text-slate-500 text-center">
+          New student? <Link to="/register" className="text-brand-600">Register — first month free</Link>
+        </p>
       </form>
     </div>
   )

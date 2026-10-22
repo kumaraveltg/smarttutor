@@ -331,7 +331,7 @@ export default function QuestionsListPage() {
               </select>
             </div>
             {renderSelect('Board', 'board', 'Board of Category')}
-            {renderSelect('Class', 'cls', 'School')}
+            {renderSelect('Class', 'cls', 'Class')}
             {renderSelect('Subject', 'subject', 'Subject')}
 
             <div className="border-t border-slate-100 pt-3">

@@ -20,11 +20,19 @@ import QuestionsFormPage from '../pages/admin/QuestionsFormPage'
 import AnswersListPage from '../pages/admin/AnswersListPage'
 import AnswersFormPage from '../pages/admin/AnswersFormPage'
 import ProfilePage from '../pages/ProfilePage'
+import RegisterPage from '../pages/RegisterPage'
+import PaymentPage from '../pages/PaymentPage'
+import ForgotPasswordPage from '../pages/ForgotPasswordPage'
+import ResetPasswordPage from '../pages/ResetPasswordPage'
 
 export default function AppRoutes() {
   return (
     <Routes>
       <Route path="/login" element={<LoginPage />} />
+      <Route path="/register" element={<RegisterPage />} />
+      <Route path="/forgot-password" element={<ForgotPasswordPage />} />
+      <Route path="/reset-password" element={<ResetPasswordPage />} />
+      <Route path="/payment" element={<PaymentPage />} /> 
 
       <Route
         path="/admin"
@@ -55,15 +63,13 @@ export default function AppRoutes() {
 
         <Route path="answers" element={<AnswersListPage />} />
         <Route path="answers/:id" element={<AnswersFormPage />} />
+        
       </Route>
 
-      <Route
-        path="/practice"
-        element={<PracticeLayout />}
-        // element={<RequireRole roles={['student']}><PracticeLayout /></RequireRole>}
-      >
-        <Route index element={<ChatPage />} />
-      </Route>
+    <Route path="/practice" element={<PracticeLayout />}>
+    <Route index element={<ChatPage />} />
+    <Route path="profile" element={<ProfilePage />} />
+  </Route>
 
       <Route path="/" element={<Navigate to="/login" replace />} />
     </Routes>
