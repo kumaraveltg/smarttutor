@@ -1,12 +1,14 @@
 import { NavLink, Outlet, useNavigate } from 'react-router-dom'
 import { useEffect } from 'react'
-import { MessageSquare } from 'lucide-react'
+import { MessageSquare,CreditCard } from 'lucide-react'
 import TopBar from '../layout/TopBar'
-import { studentApi } from '../../api/studentApi'
+import  {studentApi}  from "../../api/studentApi";
+import SubscriptionBanner from '../../pages/SubscriptionBanner'
 
 // Add more entries here as practice section grows (e.g. History, Progress).
 const NAV_ITEMS = [
   { to: '/practice', label: 'Chat', end: true, icon: MessageSquare },
+  { to: '/practice/payment', label: 'Renew / Pay', end: true, icon: CreditCard },
 ]
 
 export default function PracticeLayout() {
@@ -44,6 +46,7 @@ useEffect(() => {
       <div className="flex-1 flex flex-col">
         <TopBar title="Practice" />
         <main className="flex-1 p-6 overflow-y-auto">
+           <SubscriptionBanner />
           <Outlet />
         </main>
       </div>

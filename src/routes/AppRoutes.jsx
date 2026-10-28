@@ -32,7 +32,7 @@ export default function AppRoutes() {
       <Route path="/register" element={<RegisterPage />} />
       <Route path="/forgot-password" element={<ForgotPasswordPage />} />
       <Route path="/reset-password" element={<ResetPasswordPage />} />
-      <Route path="/payment" element={<PaymentPage />} /> 
+      <Route path="/payment" element={<Navigate to="/practice/payment" replace />} />
 
       <Route
         path="/admin"
@@ -66,11 +66,11 @@ export default function AppRoutes() {
         
       </Route>
 
-    <Route path="/practice" element={<PracticeLayout />}>
-    <Route index element={<ChatPage />} />
-    <Route path="profile" element={<ProfilePage />} />
-  </Route>
-
+      <Route path="/practice" element={<PracticeLayout />}>
+  <Route index element={<ChatPage />} />
+  <Route path="profile" element={<ProfilePage />} />
+  <Route path="payment" element={<PaymentPage />} />
+</Route>
       <Route path="/" element={<Navigate to="/login" replace />} />
     </Routes>
   )

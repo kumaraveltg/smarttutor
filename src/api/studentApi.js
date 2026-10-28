@@ -16,4 +16,10 @@ export const studentApi = {
   practiceChapters: (subjectId) =>
   api.get('/student/practice/chapters', { params: subjectId ? { subject_id: subjectId } : {} }).then(unwrap),
 practiceQuestions: (chapterId) => api.get(`/student/practice/chapters/${chapterId}/questions`).then(unwrap),
+subscriptions: () => api.get('/student/subscriptions').then(unwrap),
+preview: (planId, subjectIds) =>
+  api.get('/student/payments/preview', {
+    params: { plan_id: planId, subject_ids: subjectIds },
+    paramsSerializer: { indexes: null },
+  }).then(unwrap),
 }

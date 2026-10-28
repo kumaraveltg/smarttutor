@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
-import { studentApi } from '../../api/studentApi'
+import { studentApi } from "../api/studentApi";
 
 // Shows when any subject is expired, or ends within 5 days (free month or paid plan).
 export default function SubscriptionBanner() {

@@ -99,7 +99,7 @@ export default function PaymentPage() {
   }
 
   return (
-    <div className="max-w-md mx-auto p-6">
+    <div className="max-w-xl">
       <h2 className="text-lg font-semibold text-slate-700 mb-1">Pay for subjects</h2>
       <p className="text-sm text-slate-500 mb-4">Each subject is paid separately. Tick the ones you want to pay for.</p>
 
