@@ -135,6 +135,7 @@ export default function AnswersListPage() {
   }, [selectedChapterId, chapters])
 
   const lovOptions = (type) => lov.filter((r) => r.type === type)
+  console.log('LOV types:', [...new Set(lov.map((r) => `[${r.type}]`))])
   const filtersReady = filters.board && filters.cls && filters.subject
 
   const treeChapters = useMemo(() => {
@@ -393,7 +394,7 @@ export default function AnswersListPage() {
               </select>
             </div>
             {renderSelect('Board', 'board', 'Board of Category')}
-            {renderSelect('Class', 'cls', 'School')}
+            {renderSelect('Class', 'cls', 'Class')}
             {renderSelect('Subject', 'subject', 'Subject')}
 
             <div className="border-t border-slate-100 pt-3">

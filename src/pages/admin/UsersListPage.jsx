@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { adminApi } from '../../api/adminApi'
-import { Pencil, Trash2 } from 'lucide-react'
+import { Pencil, Trash2 } from 'lucide-react' 
 
 const RESOURCE = 'users'
 const LABEL = 'Users'

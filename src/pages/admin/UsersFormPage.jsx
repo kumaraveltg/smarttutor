@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { adminApi } from '../../api/adminApi'
 import { useAuth } from '../../auth/AuthContext'  
+import StudentRegistrationEditor from './StudentRegistrationEditor'
 
 const RESOURCE = 'users'
 const LABEL = 'User'
@@ -67,6 +68,7 @@ export default function UsersFormPage() {
   }
 
  return (
+  <>
   <form onSubmit={handleSubmit} className="max-w-4xl bg-white rounded-lg shadow-sm p-6 space-y-6">
     <h1 className="text-lg font-semibold text-slate-800">
       {isNew ? `Add ${LABEL}` : `Edit ${LABEL}`}
@@ -188,5 +190,8 @@ export default function UsersFormPage() {
       </button>
     </div>
   </form>
+  
+  {id && <StudentRegistrationEditor userId={id} />}
+  </>
 )
 }

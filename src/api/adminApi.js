@@ -20,6 +20,12 @@ export const adminApi = {
     }),
 
   remove: (resource, id) => client.delete(`/admin/${resource}/${id}`),
+    // Student registration (class / medium / subjects), edited by an admin
+  getStudentRegistration: (userId) =>
+    client.get(`/student/admin/students/${userId}/registration`),
+
+  updateStudentRegistration: (userId, payload) =>
+    client.put(`/student/admin/students/${userId}/registration`, payload),
 
   // ---- Translations ----
   listTranslations: (resource, id) =>
@@ -39,4 +45,5 @@ export const adminApi = {
 
   deleteTranslation: (resource, id, langCode) =>
     client.delete(`/admin/${resource}/${id}/translations/${langCode}`),
+  
 }
