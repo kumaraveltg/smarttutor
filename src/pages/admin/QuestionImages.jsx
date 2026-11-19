@@ -1,30 +1,32 @@
 import { useEffect, useRef, useState } from 'react'
 import DiagramEditor from './DiagramEditor'
 
-const API_BASE = 'http://127.0.0.1:8000'
+const API_BASE = 'http://127.0.0.1:8000' 
 
 // ---- API calls (change the URLs here if your backend differs) -------------
 export async function listImages(questionId) {
-  const res = await fetch(`${API_BASE}/questions/${questionId}/images`)
+  const res = await fetch(`${API_BASE}/admin/questions/${questionId}/images`)
   if (!res.ok) throw new Error(`list failed (${res.status})`)
   return res.json()
 }
 
 export async function uploadImage(questionId, file) {
   const fd = new FormData()
-  fd.append('file', file)
-  const res = await fetch(`${API_BASE}/questions/${questionId}/images`, { method: 'POST', body: fd })
+  fd.append('files', file)                       // backend field is "files"
+  const res = await fetch(`${API_BASE}/admin/questions/${questionId}/images`, { method: 'POST', body: fd })
   if (!res.ok) throw new Error(`upload failed (${res.status})`)
-  return res.json()
+  const rows = await res.json()                  // backend returns a list
+  return rows[0]
 }
 
 export async function deleteImage(questionId, imageId) {
-  const res = await fetch(`${API_BASE}/questions/${questionId}/images/${imageId}`, { method: 'DELETE' })
+  const res = await fetch(`${API_BASE}/admin/question-images/${imageId}`, { method: 'DELETE' })
   if (!res.ok) throw new Error(`delete failed (${res.status})`)
 }
 
-// URL the browser uses to show an image that is already saved.
-const imageUrl = (img) => `${API_BASE}/question-images/${img.file_path}`
+// the backend already returns url = "/images/<path>"
+const imageUrl = (img) => `${API_BASE}${img.url}`
+
 
 // Reads a File into a data URL so a preview always works, even before upload.
 const readAsDataUrl = (file) =>
