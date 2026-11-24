@@ -58,6 +58,8 @@ export default function QuestionsListPage() {
   const [lang, setLang] = useState('en')
   const showTamil = lang === 'ta'
   const titleOf = (row) => (showTamil && row.title_ta ? row.title_ta : row.title_en) 
+  const [importErrors, setImportErrors] = useState([])
+  const [logImport, setLogImport] = useState(false)
 
   async function loadAll() {
     setLoading(true)
@@ -182,8 +184,17 @@ export default function QuestionsListPage() {
     return map
   }, [rows])
 
+  const numberedRows = useMemo(() => {
+    const counters = {}
+    return rows.map((row) => {
+      const ex = row._exercise
+      counters[ex] = (counters[ex] || 0) + 1
+      return { ...row, _no: counters[ex] }
+    })
+  }, [rows])
+
   const totalPages = pageSize === 'All' ? 1 : Math.max(1, Math.ceil(rows.length / pageSize))
-  const pagedRows = pageSize === 'All' ? rows : rows.slice((page - 1) * pageSize, page * pageSize)
+  const pagedRows = pageSize === 'All'  ? numberedRows  : numberedRows.slice((page - 1) * pageSize, page * pageSize)
 
   async function handleDelete(id) {
     if (!confirm('Delete this question?')) return
@@ -215,6 +226,7 @@ export default function QuestionsListPage() {
     e.target.value = '' // lets the same file be picked again later
     if (!file || !selectedChapterId || !chapter) return
     setNotice(null)
+    setImportErrors([])
 
     let items = []
     try {
@@ -257,10 +269,12 @@ export default function QuestionsListPage() {
           medium_id: chapter.medium_lov_id,
           items,
           modified_by: currentUser?.username,
+          debug: logImport,
         },
         currentUser?.username
       )
       const skipped = result.errors || []
+      setImportErrors(skipped)
       setNotice({
         type: skipped.length ? 'warn' : 'ok',
         text:
@@ -275,11 +289,17 @@ export default function QuestionsListPage() {
             : ''),
       })
       loadQuestions()
-    } catch (err) {
-      setNotice({ type: 'error', text: 'Import failed. Nothing was saved. Check the file and try again.' })
+     } catch (err) {
+      console.error('Import failed', err)
+      const d = err?.detail ?? err?.message ?? ''
+      const detail = typeof d === 'string' ? d : JSON.stringify(d)
+      setNotice({
+        type: 'error',
+        text: `Import failed${err?.status ? ` (${err.status})` : ''}${detail ? `: ${detail}` : ''}. Nothing was saved.`,
+      })
     } finally {
       setImporting(false)
-    }
+    }  
   }
 
   function renderSelect(label, key, type) {
@@ -387,7 +407,12 @@ export default function QuestionsListPage() {
                       className={`inline-flex items-center gap-1 text-sm px-3 py-2 rounded-md border border-slate-300 text-slate-600 hover:bg-slate-100 cursor-pointer ${
                         importing ? 'opacity-50 pointer-events-none' : ''
                       }`}
-                    >
+                    >                      <input
+                        type="checkbox"
+                        checked={logImport}
+                        onChange={(e) => setLogImport(e.target.checked)}
+                      />
+                      Log
                       <Upload size={14} /> {importing ? 'Importing…' : 'Import Excel'}
                       <input type="file" accept=".xlsx,.xls" className="hidden" onChange={handleImportFile} />
                     </label>
@@ -405,7 +430,13 @@ export default function QuestionsListPage() {
                     {notice.text}
                   </div>
                 )}
-
+                {importErrors.length > 0 && (
+                  <div className="mb-3 max-h-48 overflow-auto text-xs border border-amber-200 rounded-md bg-amber-50 p-2">
+                    {importErrors.map((s, i) => (
+                      <div key={i}>Row {s.row}: {s.reason}</div>
+                    ))}
+                  </div>
+                )}
                 <div className="mb-3">
                   <input
                     type="text"
@@ -452,7 +483,8 @@ export default function QuestionsListPage() {
                           )}
                           <tr className="border-t border-slate-100 align-top">
                             <td className="px-4 py-2 text-slate-400">
-                              {(pageSize === 'All' ? 0 : (page - 1) * pageSize) + i + 1}
+                              {/* {(pageSize === 'All' ? 0 : (page - 1) * pageSize) + i + 1} */}
+                              {row._no}
                             </td>
                             <td
                               className="py-2 pr-4 min-w-0"

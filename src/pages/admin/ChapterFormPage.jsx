@@ -66,9 +66,9 @@ async function convertAndSet(raw) {
     setValues((v) => ({ ...v, [key]: val }))
   }
 
-  const boardOptions = lov.filter((r) => r.type === 'Board of Category')
-  const classOptions = lov.filter((r) => r.type === 'School')
-  const mediumOptions = lov.filter((r) => r.type === 'Medium')
+  const boardOptions   = lov.filter((r) => r.type === 'Board of Category')
+  const classOptions   = lov.filter((r) => r.type === 'Class')
+  const mediumOptions  = lov.filter((r) => r.type === 'Medium')
   const subjectOptions = lov.filter((r) => r.type === 'Subject')
 
   // Calls MyMemory's free translation API (no key needed) to convert
@@ -115,24 +115,28 @@ async function convertAndSet(raw) {
   }
 
   function renderLovSelect(label, key, options) {
-    return (
-      <div>
-        <label className="block text-sm text-slate-600 mb-1">{label}</label>
-        <select
-          className="w-full border border-slate-300 rounded-md px-3 py-2 text-sm"
-          value={values[key] || ''}
-          onChange={(e) => setField(key, e.target.value)}
-          required
-          disabled={optionsLoading}
-        >
-          <option value="">{optionsLoading ? 'Loading…' : 'Select…'}</option>
-          {options.map((opt) => (
-            <option key={opt.lov_id} value={opt.lov_id}>{opt.value}</option>
-          ))}
-        </select>
-      </div>
-    )
-  }
+  const sortedOptions = [...options].sort((a, b) =>
+    String(a.value).localeCompare(String(b.value), undefined, { numeric: true, sensitivity: 'base' })
+  )
+
+  return (
+    <div>
+      <label className="block text-sm text-slate-600 mb-1">{label}</label>
+      <select
+        className="w-full border border-slate-300 rounded-md px-3 py-2 text-sm"
+        value={values[key] || ''}
+        onChange={(e) => setField(key, e.target.value)}
+        required
+        disabled={optionsLoading}
+      >
+        <option value="">{optionsLoading ? 'Loading…' : 'Select…'}</option>
+        {sortedOptions.map((opt) => (
+          <option key={opt.lov_id} value={opt.lov_id}>{opt.value}</option>
+        ))}
+      </select>
+    </div>
+  )
+}
 
   return (
     <form onSubmit={handleSubmit} className="max-w-4xl bg-white rounded-lg shadow-sm p-6 space-y-6">
