@@ -7,23 +7,28 @@ import './FunctionPlotter.css';
   FunctionPlotter: draw graphs for maths questions.
   - equations:  2x^2 - 3x + 1,  sin(x),  1/x,  x = 3 (vertical line)
   - points & shapes:  A(-3, 5), B(5, -2), C(5, 6)  joined and shaded like a textbook figure
+  - text labels (e.g. y = f(x) along a line) and a caption under the graph (e.g. Fig. 1.16)
   - no external libraries, draws on a <canvas>
   - drag to pan, mouse wheel to zoom, hover to read values, download as PNG
 
   Props
     initialFunctions  array of strings or { expr, color, visible }     default ['x^2']
     initialShapes     array of { points, mode, fill, labels, color }   default []
+    initialLabels     array of { text, x, y, angle }                   default []
+    initialCaption    string shown under the graph                     default ''
     initialView       { xMin, xMax, yMin, yMax }                       default -10..10
     initialDegrees    true = start in degrees instead of radians       default false
     height            canvas height in px                              default 420
     readOnly          hide the editing boxes (for showing a saved graph)
-    onChange          called (debounced) with { functions, shapes, view, degrees }
+    onChange          called (debounced) with
+                      { functions, shapes, labels, caption, view, degrees }
                       so the parent can save the graph with a question
 */
 
 const COLORS = ['#2563eb', '#dc2626', '#16a34a', '#9333ea', '#ea580c', '#0891b2'];
 const MAX_FUNCTIONS = 6;
 const MAX_SHAPES = 4;
+const MAX_LABELS = 4;
 const DEFAULT_VIEW = { xMin: -10, xMax: 10, yMin: -10, yMax: 10 };
 const EXAMPLES = ['x^2', 'x^3 - 3x', 'sin(x)', '1/x', 'sqrt(x)', 'x = 3'];
 const EXAMPLE_TRIANGLE = 'A(-3, 5), B(5, -2), C(5, 6)';
@@ -36,6 +41,8 @@ const MODES = [
 export default function FunctionPlotter({
   initialFunctions = ['x^2'],
   initialShapes = [],
+  initialLabels = [],
+  initialCaption = '',
   initialView = DEFAULT_VIEW,
   initialDegrees = false,
   height = 420,
@@ -66,6 +73,16 @@ export default function FunctionPlotter({
       color: s.color || COLORS[(i + 3) % COLORS.length],
     }))
   );
+  const [labelRows, setLabelRows] = useState(() =>
+    initialLabels.slice(0, MAX_LABELS).map((l) => ({
+      id: newId(),
+      text: l.text || '',
+      x: l.x ?? 0,
+      y: l.y ?? 0,
+      angle: l.angle ?? 0,
+    }))
+  );
+  const [caption, setCaption] = useState(initialCaption || '');
   const [degrees, setDegrees] = useState(initialDegrees);
   const [equal, setEqual] = useState(true);
   const [view, setView] = useState(initialView);
@@ -143,7 +160,24 @@ export default function FunctionPlotter({
     const ctx = canvas.getContext('2d');
     ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
     drawGraph(ctx, w, h, view, curves, shapes, cursor ? cursor.x : null);
-  }, [w, h, view, curves, shapes, cursor]);
+
+    // text labels, e.g. "y = f(x)" written along a line
+    labelRows.forEach((l) => {
+      if (!l.text.trim()) return;
+      const px = ((Number(l.x) - view.xMin) / (view.xMax - view.xMin)) * w;
+      const py = ((view.yMax - Number(l.y)) / (view.yMax - view.yMin)) * h;
+      ctx.save();
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      ctx.translate(px, py);
+      ctx.rotate((-(Number(l.angle) || 0) * Math.PI) / 180);
+      ctx.font = 'italic 16px serif';
+      ctx.fillStyle = '#111';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText(l.text, 0, 0);
+      ctx.restore();
+    });
+  }, [w, h, view, curves, shapes, cursor, labelRows]);
 
   // tell the parent what to save (debounced, skipped on first render).
   // onChange is kept in a ref so an inline arrow from the parent cannot retrigger this effect.
@@ -161,12 +195,16 @@ export default function FunctionPlotter({
         shapes: shapeRows
           .filter((s) => s.text.trim())
           .map((s) => ({ points: s.text, mode: s.mode, fill: s.fill, labels: s.labels, color: s.color })),
+        labels: labelRows
+          .filter((l) => l.text.trim())
+          .map((l) => ({ text: l.text, x: Number(l.x) || 0, y: Number(l.y) || 0, angle: Number(l.angle) || 0 })),
+        caption,
         view,
         degrees,
       });
     }, 400);
     return () => clearTimeout(t);
-  }, [rows, shapeRows, view, degrees]);
+  }, [rows, shapeRows, labelRows, caption, view, degrees]);
 
   /* ----- zoom ----- */
 
@@ -270,6 +308,18 @@ export default function FunctionPlotter({
       ss.length >= MAX_SHAPES
         ? ss
         : [...ss, { id: newId(), text, mode: 'polygon', fill: true, labels: true, color: nextColor() }]
+    );
+
+  /* ----- label rows ----- */
+
+  const updateLabel = (id, patch) =>
+    setLabelRows((ls) => ls.map((l) => (l.id === id ? { ...l, ...patch } : l)));
+
+  const removeLabel = (id) => setLabelRows((ls) => ls.filter((l) => l.id !== id));
+
+  const addLabel = () =>
+    setLabelRows((ls) =>
+      ls.length >= MAX_LABELS ? ls : [...ls, { id: newId(), text: '', x: 0, y: 0, angle: 0 }]
     );
 
   /* ----- view actions ----- */
@@ -392,12 +442,52 @@ export default function FunctionPlotter({
             </div>
           ))}
 
+          {labelRows.map((l) => (
+            <div className="fp-row" key={l.id}>
+              <input
+                type="text"
+                className="fp-input"
+                value={l.text}
+                placeholder="Label text, e.g. y = f(x)"
+                spellCheck={false}
+                onChange={(e) => updateLabel(l.id, { text: e.target.value })}
+                aria-label="Label text"
+              />
+              {['x', 'y', 'angle'].map((k) => (
+                <input
+                  key={k}
+                  type="text"
+                  inputMode="decimal"
+                  className="fp-input"
+                  style={{ width: 70, flex: 'none' }}
+                  value={l[k]}
+                  placeholder={k}
+                  title={k === 'angle' ? 'Angle in degrees (negative = tilted down)' : `${k} position on the graph`}
+                  onChange={(e) => updateLabel(l.id, { [k]: e.target.value })}
+                  aria-label={`Label ${k}`}
+                />
+              ))}
+              <button
+                type="button"
+                className="fp-icon-btn"
+                onClick={() => removeLabel(l.id)}
+                title="Remove"
+                aria-label="Remove this label"
+              >
+                ×
+              </button>
+            </div>
+          ))}
+
           <div className="fp-toolbar">
             <button type="button" className="fp-btn" onClick={() => addRow()} disabled={rows.length >= MAX_FUNCTIONS}>
               + Add equation
             </button>
             <button type="button" className="fp-btn" onClick={() => addShape()} disabled={shapeRows.length >= MAX_SHAPES}>
               + Add points / shape
+            </button>
+            <button type="button" className="fp-btn" onClick={addLabel} disabled={labelRows.length >= MAX_LABELS}>
+              + Add label
             </button>
             <div className="fp-segment" role="group" aria-label="Angle unit">
               <button type="button" className={!degrees ? 'fp-on' : ''} onClick={() => setDegrees(false)}>Radians</button>
@@ -407,6 +497,17 @@ export default function FunctionPlotter({
               <input type="checkbox" checked={equal} onChange={(e) => setEqual(e.target.checked)} />
               Equal axes
             </label>
+          </div>
+
+          <div className="fp-row">
+            <input
+              type="text"
+              className="fp-input"
+              value={caption}
+              placeholder="Caption under the graph, e.g. Fig. 1.16"
+              onChange={(e) => setCaption(e.target.value)}
+              aria-label="Caption"
+            />
           </div>
 
           <div className="fp-examples">
@@ -443,6 +544,12 @@ export default function FunctionPlotter({
           )}
         </div>
       </div>
+
+      {caption && (
+        <div style={{ textAlign: 'center', color: '#0ea5e9', marginTop: 4, fontSize: 16 }}>
+          {caption}
+        </div>
+      )}
 
       <div className="fp-readout">
         {cursor ? (

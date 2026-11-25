@@ -5,6 +5,7 @@ import * as XLSX from 'xlsx'
 import { adminApi } from '../../api/adminApi'
 import { useAuth } from '../../auth/AuthContext'
 import MathText from '../../components/MathText'
+import { downloadTextFile } from '../../utils/downloadTextFile'
 
 
 const RESOURCE = 'questions'
@@ -275,6 +276,28 @@ export default function QuestionsListPage() {
       )
       const skipped = result.errors || []
       setImportErrors(skipped)
+      if (logImport) {
+          const skippedByRow = new Map(skipped.map((s) => [s.row, s.reason]))
+          const lines = [
+            `Import log - ${new Date().toLocaleString()}`,
+            `File: ${file.name}`,
+            `Chapter: ${chapter.chapter_no}. ${chapter.title_en}`,
+            `Rows read: ${items.length}`,
+            `Imported: ${result.created}`,
+            `Skipped: ${skipped.length}`,
+            '',
+            ...items.map((it) => {
+              const preview = it.question_text.replace(/\s+/g, ' ').slice(0, 60)
+              return skippedByRow.has(it.row)
+                ? `Row ${it.row}: SKIPPED - ${skippedByRow.get(it.row)} | ${preview}`
+                : `Row ${it.row}: OK | ${preview}`
+            }),
+            ...(result.log || []), // extra lines from the server, if debug returns any
+          ]
+          const stamp = new Date().toISOString().slice(0, 19).replace(/[:T]/g, '-')
+          downloadTextFile(`import-log-${stamp}.txt`, lines.join('\r\n'))
+        }
+      
       setNotice({
         type: skipped.length ? 'warn' : 'ok',
         text:
@@ -297,9 +320,16 @@ export default function QuestionsListPage() {
         type: 'error',
         text: `Import failed${err?.status ? ` (${err.status})` : ''}${detail ? `: ${detail}` : ''}. Nothing was saved.`,
       })
+
+      if (logImport) {
+        downloadTextFile(
+          'import-log-error.txt',
+          [`Import failed${err?.status ? ` (${err.status})` : ''}`, detail, '', `File: ${file.name}`].join('\r\n')
+        )
+      }
     } finally {
       setImporting(false)
-    }  
+    }
   }
 
   function renderSelect(label, key, type) {
@@ -403,19 +433,25 @@ export default function QuestionsListPage() {
                     >
                       <Download size={14} /> Template
                     </button>
-                    <label
-                      className={`inline-flex items-center gap-1 text-sm px-3 py-2 rounded-md border border-slate-300 text-slate-600 hover:bg-slate-100 cursor-pointer ${
-                        importing ? 'opacity-50 pointer-events-none' : ''
-                      }`}
-                    >                      <input
+                   <div className="inline-flex items-center gap-3">
+                    <label className="inline-flex items-center gap-1 text-sm text-slate-600">
+                      <input
                         type="checkbox"
                         checked={logImport}
                         onChange={(e) => setLogImport(e.target.checked)}
                       />
                       Log
+                    </label>
+
+                    <label
+                      className={`inline-flex items-center gap-1 text-sm px-3 py-2 rounded-md border border-slate-300 text-slate-600 hover:bg-slate-100 cursor-pointer ${
+                        importing ? 'opacity-50 pointer-events-none' : ''
+                      }`}
+                    >
                       <Upload size={14} /> {importing ? 'Importing…' : 'Import Excel'}
                       <input type="file" accept=".xlsx,.xls" className="hidden" onChange={handleImportFile} />
                     </label>
+                  </div>
                     <Link
                       to={`/admin/questions/new?chapter=${selectedChapterId}`}
                       className="bg-brand-500 hover:bg-brand-600 text-white text-sm px-3 py-2 rounded-md"

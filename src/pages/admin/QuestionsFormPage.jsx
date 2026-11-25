@@ -247,7 +247,7 @@ async function convertWordBeforeCaret(text, caret) {
         sort_order: Number(values.sort_order) || 0,
         chapter_id: chapter.chapter_id,
         modified_by: currentUser?.username,
-        graph_json: (graph?.functions?.length || graph?.shapes?.length) ? graph : null,
+        graph_json: (graph?.functions?.length || graph?.shapes?.length || graph?.labels?.length || graph?.caption) ? graph : null,
       }
       if (isNew) {
         const created = await adminApi.create(RESOURCE, payload, currentUser?.username)
@@ -446,6 +446,8 @@ async function convertWordBeforeCaret(text, caret) {
           <FunctionPlotter
             initialFunctions={graph?.functions || ['x^2']}
             initialShapes={graph?.shapes}
+            initialLabels={graph?.labels}
+            initialCaption={graph?.caption}
             initialView={graph?.view}
             initialDegrees={graph?.degrees}
             onChange={(g) => setGraph(g)}
